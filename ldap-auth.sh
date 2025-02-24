@@ -12,8 +12,17 @@ SERVER="ldap://127.0.0.1:389"
 BIND_DN="cn=homeassistant-ldap,ou=users,dc=mydomain,dc=com"
 BIND_PW="homeassistant-ldap-password"
 
+# Define Base DN
+BASEDN="dc=mydomain,dc=com"
+
+# Set access group for normal users
+ACCESS_GROUP="CN=access-smarthome,OU=groups,DC=mydomain,DC=com"
+
+# Set administrative group for homeassistant users
+ADMIN_GROUP="CN=smarthome-adm,OU=groups,DC=mydomain,DC=com"
+
+# Path to to logfile for script output
 __PATH_LOG="/config/authentication.log"
-#__PATH_LOG="/volume1/docker/homeassistant/config/authentication.log"
 
 # Timeout in seconds
 TIMEOUT=3
@@ -28,9 +37,6 @@ __USER_PASW="${password}"
 if [[ -z "$__USER_MAIL" || -z "$__USER_PASW" ]]; then
     exit 1
 fi
-
-# Define LDAP Base DN
-BASEDN="dc=kladhest,dc=se"
 
 USER_DN=$(ldapsearch -x -LLL -H "$SERVER" -D "$BIND_DN" -w "$BIND_PW" \
     -b "$BASEDN" "(&(objectClass=person)(mail=$__USER_MAIL))" dn 2>/dev/null | awk '/^dn:/ {print $2}')
@@ -48,9 +54,6 @@ else
 fi
 
 # Step 2: Check if the user is a member of `access-smarthome`
-ACCESS_GROUP="CN=access-smarthome,OU=groups,DC=mydomain,DC=com"
-ADMIN_GROUP="CN=smarthome-adm,OU=groups,DC=mydomain,DC=com"
-
 ACCESS_MEMBER=$(ldapsearch -x -LLL -H "$SERVER" -D "$BIND_DN" -w "$BIND_PW" \
     -b "$ACCESS_GROUP" "(member=$USER_DN)" dn 2>/dev/null | grep -q "^dn:" && echo "yes")
 
